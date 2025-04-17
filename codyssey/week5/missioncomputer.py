@@ -1,5 +1,7 @@
 import random
 import time
+import platform
+import os
 from datetime import datetime
 
 
@@ -28,9 +30,36 @@ class DummySensor:
 
 class MissionComputer:
     def __init__(self):
-        self.env_values = {}
         self.ds = DummySensor()
         self.data_history = []
+
+    def get_mission_computer_info(self):
+        try:
+            system_info = {
+                'operating_system': platform.system(),
+                'os_version': platform.version(),
+                'cpu_type': platform.processor(),
+                'cpu_core_count': os.cpu_count(),
+            }
+            for key, value in system_info.items():
+                print(f"{key}: {value}")
+            print('-' * 30)
+        except Exception as e:
+            print(f"error: {str(e)}")
+
+    def get_mission_computer_load(self):
+        try:
+            if platform.system() == 'Windows':
+                load = os.getloadavg() if hasattr(os, 'getloadavg') else ('N/A', 'N/A', 'N/A')
+            else:
+                load = os.getloadavg()
+
+            print(f"1 min load average: {load[0]}")
+            print(f"5 min load average: {load[1]}")
+            print(f"15 min load average: {load[2]}")
+            print('-' * 30)
+        except Exception as e:
+            print(f"error: {str(e)}")
 
     def get_sensor_data(self):
         count = 1
@@ -38,19 +67,25 @@ class MissionComputer:
 
         try:
             while True:
+                print("Mission Computer Information:")
+                self.get_mission_computer_info()
+
+                print("Mission Computer Load:")
+                self.get_mission_computer_load()
+
                 self.ds.set_env()
-                self.env_values = self.ds.get_env()
-                self.data_history.append(self.env_values.copy())
-                
-                print(f"측정 번호: {count}")
-                for key, value in self.env_values.items():
+                env_values = self.ds.get_env()
+                self.data_history.append(env_values.copy())
+
+                print(f"Sensor Measurement Number: {count}")
+                for key, value in env_values.items():
                     print(f"{key}: {value:.2f}")
                 print('-' * 30)
 
-                if time.time() - start_time >= 300:  # 5분
+                if time.time() - start_time >= 300:  # 5 minutes
                     avg_values = {key: round(sum(d[key] for d in self.data_history) / len(self.data_history), 2)
-                                  for key in self.env_values}
-                    print("5분 평균값:")
+                                  for key in env_values}
+                    print("5-minute average values:")
                     for key, value in avg_values.items():
                         print(f"{key}: {value:.2f}")
                     print('=' * 30)
